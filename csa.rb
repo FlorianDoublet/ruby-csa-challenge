@@ -33,9 +33,10 @@ class Timetable
 end
 
 class CSA
-  attr_reader :timetable, :in_connection, :earliest_arrival
+  attr_reader :timetable, :in_connection, :earliest_arrival, :arrival_station, :min_number_connections, :earliest_value, :route_with_least_connection
   # for the least connections problem
-  attr_reader :arrival_station, :min_number_connections, :earliest_value, :route_with_least_connection
+  attr_reader :arrival_station
+  attr_accessor :min_number_connections, :earliest_value, :route_with_least_connection
 
   def initialize
     @timetable = Timetable.new
@@ -57,6 +58,17 @@ class CSA
         return
       end
     end
+  end
+
+  def print_route(route)
+    if route.empty? then puts "NO_SOLUTION"
+    else
+      route.each do |c|
+        puts "#{c.departure_station} #{c.arrival_station} #{c.departure_timestamp} #{c.arrival_timestamp}"
+      end
+    end
+    puts ""
+    STDOUT.flush
   end
 
   def print_result(arrival_station)
@@ -106,8 +118,10 @@ class CSA
     @arrival_station = arrival_station
     # launch our process to find the shortest route
     permute(timetable.connections, final_list, departure_station, departure_time)
-
+    # print the solution
+    print_route(route_with_least_connection)
   end
+
 
   # Semi-recursive method to compute all the possible route solution
   # potentially very costly but optimized to only compute potential minimum route solution and not all the possible route
@@ -115,23 +129,23 @@ class CSA
     # here we know that our final list contain a route which start from the departure station and
     # arrive to the arrival station
     if not final_list.empty? and final_list.last.arrival_station == arrival_station
-      if final_list.size < min_number_connections
-        min_number_connections = final_list.size-1
-        earliest_value = final_list.last.arrival_timestamp
+      if final_list.size < @min_number_connections
+        @min_number_connections = final_list.size-1
+        @earliest_value = final_list.last.arrival_timestamp
         # save our solution
-        route_with_least_connection = final_list
+        @route_with_least_connection = final_list
       end
       return
     end
 
     # here we save memory and calculus in removing all the connection with a later departure than our timestamp
-    if final_list.size > min_number_connections then return end
+    if final_list.size > @min_number_connections then return end
 
     to_permute.delete_if { |connection| connection.departure_timestamp < timestamp }
 
     to_permute.each_with_index do |connection, i|
       # if the departure station of the scanned connection isn't the arrival of the previous one we don't have to compute for solutions
-      if connection.departure_station != timestamp then next end
+      if connection.departure_station != station then next end
 
       # create copy of arrays
       final_cpy = final_list.dup
@@ -155,7 +169,7 @@ def main
 
   while !line.empty?
     tokens = line.split(" ")
-    csa.compute(tokens[0].to_i, tokens[1].to_i, tokens[2].to_i)
+    csa.compute_least_connection_route(tokens[0].to_i, tokens[1].to_i, tokens[2].to_i)
     line = STDIN.gets.strip
   end
 end
