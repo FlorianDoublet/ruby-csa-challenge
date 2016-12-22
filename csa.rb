@@ -34,9 +34,14 @@ end
 
 class CSA
   attr_reader :timetable, :in_connection, :earliest_arrival
+  # for the least connections problem
+  attr_reader :arrival_station, :min_number_connections, :earliest_value, :route_with_least_connection
 
   def initialize
     @timetable = Timetable.new
+    @min_number_connections = INF
+    @earliest_value = INF
+    @route_with_least_connection = Array.new
   end
 
   def main_loop(arrival_station)
@@ -93,6 +98,54 @@ class CSA
 
     print_result(arrival_station)
   end
+
+  # Compute and print the solution with the least connection
+  def compute_least_connection_route(departure_station, arrival_station, departure_time)
+    final_list = Array.new
+    # init our arrival station
+    @arrival_station = arrival_station
+    # launch our process to find the shortest route
+    permute(timetable.connections, final_list, departure_station, departure_time)
+
+  end
+
+  # Semi-recursive method to compute all the possible route solution
+  # potentially very costly but optimized to only compute potential minimum route solution and not all the possible route
+  def permute(to_permute, final_list, station, timestamp)
+    # here we know that our final list contain a route which start from the departure station and
+    # arrive to the arrival station
+    if not final_list.empty? and final_list.last.arrival_station == arrival_station
+      if final_list.size < min_number_connections
+        min_number_connections = final_list.size-1
+        earliest_value = final_list.last.arrival_timestamp
+        # save our solution
+        route_with_least_connection = final_list
+      end
+      return
+    end
+
+    # here we save memory and calculus in removing all the connection with a later departure than our timestamp
+    if final_list.size > min_number_connections then return end
+
+    to_permute.delete_if { |connection| connection.departure_timestamp < timestamp }
+
+    to_permute.each_with_index do |connection, i|
+      # if the departure station of the scanned connection isn't the arrival of the previous one we don't have to compute for solutions
+      if connection.departure_station != timestamp then next end
+
+      # create copy of arrays
+      final_cpy = final_list.dup
+      to_perm_cpy = to_permute.dup
+      # remove a scanned connection into the permutation copy list, to add it into the final copy list
+      final_cpy.push(to_perm_cpy.delete_at(i))
+      # permute with the copies and the new information to the latest added connection into the final copy list
+      permute(to_perm_cpy, final_cpy, final_cpy.last.arrival_station, final_cpy.last.arrival_timestamp)
+
+    end
+
+  end
+
+
 end
 
 def main
