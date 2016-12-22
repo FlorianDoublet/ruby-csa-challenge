@@ -165,9 +165,14 @@ class CSA
   # and if it is replace the older route by the concurrent
   def compute_best_minimum_route(concurrent_route)
     # the first most important parameter is the arrival time
-    if concurrent_route.last.arrival_timestamp < @earliest_value
-      @earliest_value = concurrent_route.last.arrival_timestamp
-      @route_with_least_connection = concurrent_route
+    if concurrent_route.last.arrival_timestamp != @earliest_value
+      if concurrent_route.last.arrival_timestamp < @earliest_value
+        @earliest_value = concurrent_route.last.arrival_timestamp
+        @route_with_least_connection = concurrent_route
+      else
+        return
+      end
+
     elsif concurrent_route.first.departure_timestamp > @route_with_least_connection.first.departure_timestamp
       # here the arrival time is the same, but we can still leave later
       @route_with_least_connection = concurrent_route
