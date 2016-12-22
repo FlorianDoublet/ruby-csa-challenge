@@ -14,9 +14,17 @@ class TestCSA < Test::Unit::TestCase
   TIMETABLE =<<EOF
 1 3 2000 10000
 1 2 3600 7200
+1 2 3900 7200
 2 3 4000 5000
+1 5 4500 7000
+1 3 4600 6000
+1 3 5000 6000
+3 4 6500 7000
+3 4 6700 7000
+3 2 7000 8000
+3 2 7000 9000
+2 5 8100 8600
 2 3 8000 9000
-1 3 5000 10000
 
 EOF
 
@@ -52,34 +60,57 @@ EOF
   end
 
   def test_simple_route
+    @io.puts "3 2 6000"
+    response = read_answer @io
+    assert_equal 1, response.size
+    assert_equal 3, response[0][:departure_station]
+    assert_equal 2, response[0][:arrival_station]
+    assert_equal 7000, response[0][:departure_timestamp]
+    assert_equal 8000, response[0][:arrival_timestamp]
+  end
+
+  def test_route_with_connection
+    @io.puts "3 5 6000"
+    response = read_answer @io
+    assert_equal 2, response.size
+    assert_equal 3, response[0][:departure_station]
+    assert_equal 2, response[0][:arrival_station]
+    assert_equal 8000, response[0][:arrival_timestamp]
+    assert_equal 2, response[1][:departure_station]
+    assert_equal 5, response[1][:arrival_station]
+    assert_equal 8600, response[1][:arrival_timestamp]
+  end
+
+
+  def test_simple_route_later_departure
     @io.puts "1 2 3000"
     response = read_answer @io
     assert_equal 1, response.size
     assert_equal 1, response[0][:departure_station]
     assert_equal 2, response[0][:arrival_station]
-    assert_equal 3600, response[0][:departure_timestamp]
+    # the departure could be 3600 to arrive at 7200
+    # but the later departure to arrive at 7200 is 3900
+    assert_equal 3900, response[0][:departure_timestamp]
     assert_equal 7200, response[0][:arrival_timestamp]
   end
 
-  def test_route_with_connection
-    @io.puts "1 3 3000"
+  def test_route_with_connection_later_departure
+    @io.puts "1 4 3000"
     response = read_answer @io
     assert_equal 2, response.size
-    assert_equal 1, response[0][:departure_station]
-    assert_equal 2, response[0][:arrival_station]
-    assert_equal 7200, response[0][:arrival_timestamp]
-    assert_equal 2, response[1][:departure_station]
-    assert_equal 3, response[1][:arrival_station]
-    assert_equal 9000, response[1][:arrival_timestamp]
-  end
-
-  def test_later_departure
-    @io.puts "1 3 4000"
-    response = read_answer @io
-    assert_equal 1, response.size
+    # the first connection
     assert_equal 1, response[0][:departure_station]
     assert_equal 3, response[0][:arrival_station]
-    assert_equal 10000, response[0][:arrival_timestamp]
+    # the departure could be 4600 here to arrival at the same station to the same hour
+    assert_equal 5000, response[0][:departure_timestamp]
+    assert_equal 6000, response[0][:arrival_timestamp]
+    # the second one
+    assert_equal 3, response[1][:departure_station]
+    assert_equal 4, response[1][:arrival_station]
+    # it also work for middle transit, we could departure from the station 3 to 4 at 6500 to arrival at 7000 too
+    # instead we take the connection from 3 to 4 at 6700
+    assert_equal 6700, response[1][:departure_timestamp]
+    assert_equal 7000, response[1][:arrival_timestamp]
   end
 
   def test_invalid_station

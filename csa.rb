@@ -42,7 +42,7 @@ class CSA
   def main_loop(arrival_station)
     earliest = INF
     timetable.connections.each_with_index do |c, i|
-      if c.departure_timestamp >= earliest_arrival[c.departure_station] && c.arrival_timestamp < earliest_arrival[c.arrival_station]
+      if c.departure_timestamp >= earliest_arrival[c.departure_station] && c.arrival_timestamp <= earliest_arrival[c.arrival_station]
         earliest_arrival[c.arrival_station] = c.arrival_timestamp
         in_connection[c.arrival_station] = i
         if c.arrival_station == arrival_station
