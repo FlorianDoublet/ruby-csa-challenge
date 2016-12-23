@@ -128,7 +128,7 @@ class CSA
   def permute(to_permute, final_list, station, timestamp)
     # here we know that our final list contain a route which start from the departure station and
     # arrive to the arrival station
-    if not final_list.empty? and final_list.last.arrival_station == arrival_station
+    if !final_list.empty? and final_list.last.arrival_station == arrival_station
       if final_list.size < @min_number_connections
         @min_number_connections = final_list.size-1
         @earliest_value = final_list.last.arrival_timestamp
